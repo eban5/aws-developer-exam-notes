@@ -184,7 +184,7 @@ Want to write 100 items per second. Each item == 512 bytes in size.
 
 
 
-## On Demand Capacity
+## On Demand Capacity (new in 2018)
 
 Charges apply for Reading Writing and Storing data
 
@@ -268,7 +268,7 @@ Types:
 
 ### Caching Strategies
 
-Lazy Loading - only loads data into cache when necessary. if requested data is in cache, E returns data to app, if data not in cache or expired E returns a null.
+**Lazy Loading** - only loads data into cache when necessary. if requested data is in cache, E returns data to app, if data not in cache or expired E returns a null.
 
 
 
@@ -286,19 +286,89 @@ CONS:
 
 
 
-## Transactions
+**Lazy Loading with TTL**
+
+Time To Live: 
+
+* specifies number of seconds until the key (data) expires to avoid keeping stale data in the cache
+
+* Lazy Loading treats an expired key as a cache miss, causes the app to retrieve the data from DB, subsequently write the data into the cache with a new TTL.
+
+* doesn't eliminate stale data - helps avoid it.
+
+
+
+**Write-Through** - adds or updates data to the cache whenever data is written to the DB
+
+PROS:
+
+* data in the cache is never stales
+
+* Users are ghenerally more tolerant of additional latency when dating data than when retrieving it.
+
+CONS:
+
+* end up wasting resources (write penalty) since every write involves 1 write to the cache + 1 write to the database.
+
+* if a node fails, a new one is spun up, data is missing in it. Have to wait until added or updated in the DB (mitigate by implementing Lazy Loading in conjunction with write-through)
+
+* Wasted resources if most of the data is never read.
+
+
+
+DAX vs Elasticache for DynamoDB:
+
+* DAX was developed and optimized specifically for DynamoDB. Only lets you use the write-through strategy.
+
+* Elasticache better for RDS
+
+
+
+## Transactions (new in 2018. not on the exam)
+
+ACID Transactions (Atomic, Consistent, Isolated, Durable)
+
+* read or write multiple items across multiple tables as an all or nothing operation
+
+* check for a pre-req condition before writing to a table.
 
 ## TTL
 
+* an attribute that defines an expiry time for your data.
+
+* good for removing irrelevant or old data no longer useful after time:
+
+  * session data
+
+  * event logs
+
+  * temp data
+
+* reduces cost for storage.
 
 
 
+TTL is expressed as epoch time. Expiration of session data could be set to 2 hours after session begins.
 
 
 
+```bash
+#1) Check your IAM user permissions:
 
+aws iam get-user
 
+#2) Create SessionData table:
 
+aws dynamodb create-table --table-name SessionData --attribute-definitions \
+AttributeName=UserID,AttributeType=N --key-schema \
+AttributeName=UserID,KeyType=HASH \
+--provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+
+#3) Populate SessionData Table:
+
+aws dynamodb batch-write-item --request-items file://items.json
+
+```
 
 
 
