@@ -73,9 +73,7 @@ DynamoDB stores and retrieves data based on Primary Key.
 
 * Queries based on Sort Key are much faster than the main table. 
 
-  
-
-  ### Global Secondary Index
+### Global Secondary Index
 
 * *flexible*, create whenever you want 
 
@@ -91,8 +89,6 @@ Give different view of your data, based on alternative Partition/Sort Keys
 Query more efficient than Scan
 
 Resume the impact of a query or scan by setting a smaller page size which uses fewer read operations.
-
-
 
 ### Query
 
@@ -163,8 +159,8 @@ e.g., you app needs to read 80 items (table rows) per second. Each item = 3KB in
 1x RCU = 1x Strongly Consistent Read of 4 KBps
 
 1. calculate how many RCUs needed for each read: 
-    size of each item / 4KB = 3 KB / 4 KB = 0.75 -> (round to nearest whole) = 1 RCU per read operation.
-    
+    size of each item / 4KB = 3 KB / 4 KB = 0.75 -> (round to nearest whole) = 1 RCU per read operation.
+
 #### Eventually Consistent Reads Calculation
 
 1x RCU = 2x Eventually Consistent Reads of 4 KBps
@@ -182,8 +178,6 @@ Want to write 100 items per second. Each item == 512 bytes in size.
 2. Multipllied by number of writes per second = 100 x 1 = 100 Write Capcity Units required.
 ```
 
-
-
 ## On Demand Capacity (new in 2018)
 
 Charges apply for Reading Writing and Storing data
@@ -194,8 +188,6 @@ Charges apply for Reading Writing and Storing data
 
 * pay for what you use (pay per request)
 
-
-
 ## DynamoDB Accelerator (DAX)
 
 fully managed, clustered, in-memory cache for DynamoDB
@@ -204,21 +196,15 @@ fully managed, clustered, in-memory cache for DynamoDB
 
 - ms performance for millions of request per second
 
-  
-
 Write-through caching service (updates written to cache and backend store at the same time)
 
 Allows you point your DynamoDB API calls at the DAX cluster. 
-
-
 
 on Cache miss - DAX performs an Event. Consistent GetItem operation against DybamnocDB
 
 Retriueveal of data cfrom DAX reduces the read load on tables
 
 reduce Provisioned Read Capcity.
-
-
 
 GOOD for retail during Black Friday, mobile games, ready-heavy bursty workloads. auction applications.
 
@@ -240,8 +226,6 @@ NOT good for :
 
 * takes load off the databases. good if your database is particularly read-heavy and the data is not changing frequently.
 
-
-
 Benefits:
 
 * improves performance for read-heavy workloads (social networking, gaming, media sharing, Q&A portals)
@@ -251,8 +235,6 @@ Benefits:
 * also good for compute-heavy recommendation engines.
 
   * can be used to store results of I/O intensive database queries or output of compute-intensive calculations.
-
-
 
 Types:
 
@@ -264,13 +246,9 @@ Types:
 
 * open source key-value, supports more complex data structures, supports master/slave replication and Multi-AZ support
 
-
-
 ### Caching Strategies
 
 **Lazy Loading** - only loads data into cache when necessary. if requested data is in cache, E returns data to app, if data not in cache or expired E returns a null.
-
-
 
 PROS: 
 
@@ -284,8 +262,6 @@ CONS:
 
 * stale data - if data only updated on cache miss, it can become stale. doesn't automatically update if the data in the database changes.
 
-
-
 **Lazy Loading with TTL**
 
 Time To Live: 
@@ -295,8 +271,6 @@ Time To Live:
 * Lazy Loading treats an expired key as a cache miss, causes the app to retrieve the data from DB, subsequently write the data into the cache with a new TTL.
 
 * doesn't eliminate stale data - helps avoid it.
-
-
 
 **Write-Through** - adds or updates data to the cache whenever data is written to the DB
 
@@ -314,15 +288,11 @@ CONS:
 
 * Wasted resources if most of the data is never read.
 
-
-
 DAX vs Elasticache for DynamoDB:
 
 * DAX was developed and optimized specifically for DynamoDB. Only lets you use the write-through strategy.
 
 * Elasticache better for RDS
-
-
 
 ## Transactions (new in 2018. not on the exam)
 
@@ -346,11 +316,7 @@ ACID Transactions (Atomic, Consistent, Isolated, Durable)
 
 * reduces cost for storage.
 
-
-
 TTL is expressed as epoch time. Expiration of session data could be set to 2 hours after session begins.
-
-
 
 ```bash
 #1) Check your IAM user permissions:
@@ -367,13 +333,4 @@ AttributeName=UserID,KeyType=HASH \
 #3) Populate SessionData Table:
 
 aws dynamodb batch-write-item --request-items file://items.json
-
 ```
-
-
-
-
-
-
-
-
