@@ -42,11 +42,11 @@ Cognito tracks association between user identity and the various different devic
 
 * Amazon SNS is used to send a silent push notification to all the devices associated with a given user identity whenever data stored in the cloud changes.
 
+
+
 ## Inline Policies vs Managed Policies vs Custom Policies
 
-
-
-**Managed Policy** - IAM policy which is created and admin by AWS
+**Managed Policy** - AWS-managed default policies (***AWS recommended***)
 
 * for common use cases based on job function e,g, DynamoDBFullAccess, EC2ReadOnlyAccess
 
@@ -55,5 +55,19 @@ Cognito tracks association between user identity and the various different devic
 * a single Managed Policy can be attached to multiple users, groups, or roles within the same AWS account and across different accounts.
 
 * Can't change the permissions defined in an AWS managed Policy
+
+**Customer Managed Policies** - standalone IAM policy that you create and admin inside your own AWS account. Can attach to multiple users, groups, and roles **only in your own account** 
+
+* Can create Customer Managed Policy by copying existing AWS Managed Policy and customizing it.
+
+
+
+**Inline Policies** - embedded within the user, group, or role to which it applies. There is a strict 1:1 relationship between the entity and the policy.
+
+When you delete the user, group, or role in which the policy is embedded, the policy is also deleted. 
+
+* useful when you want to be sure that the permiossions in a policy are not inadvertently assigned to any other user, group, or role than the one intended.
+
+
 
 
