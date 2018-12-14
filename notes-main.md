@@ -28,20 +28,17 @@ Provides resizable compute capacity in the cloud. Reduces the time required to o
 
 ## EBS 
 
-create storage volumes and attach them to EC2 instances. 
+create storage volumes and attach them to EC2 instances. they are AZ locked.
 
-General Purpose SSD - GP2 - for less than 10,000 IOPS
-Provision IOPS SSD - desciened for i/o intensive apps.
-
-Throughput Opimizied HDD
-Cold HDD
-Magnetic
-
+* General Purpose SSD - GP2 - for less than 10,000 IOPS
+* Provision IOPS SSD - desciened for i/o intensive apps.
+* Throughput Optimizied HDD
+* Cold HDD
+* Magnetic
 
 _always use roles_
 
 ## IAM 
-### overlap with S3
 
 Manage users and their level of access to AWS Console
 
@@ -50,17 +47,17 @@ Manage users and their level of access to AWS Console
 * **Roles** - create roles and then assign them to AWS resources
 * **Policies** - a document that defines one or more permissions
 
-IAM is universal, not region-by-region.
-"root" has complete Admin access
-New users have ***no*** permissions when first created.
-Access key id / secret key ≠ aws mgmt console login
-Always setup MFA
+* IAM is universal, not region-by-region.
+* "root" has complete Admin access. Setup MFA for root account and then let only 1 Admin have access to it.
+* New users have ***no*** permissions when first created.
+* Access key id / secret key ≠ aws mgmt console login
+* Always setup MFA
 
-Least Priveleges
+Rule of Least Privilege - give users the smallest amount of privileges to your system and only add what is necessary.
 
-Create roles and apply them to EC2 instances to interact with AWS services on your behalf. Better than hardcoding secret keys into the instance.
-
-Roles allow you to not use Acces Key ID's and Secret Access Keys
+Roles:
+* Create roles and apply them to EC2 instances to interact with AWS services on your behalf. Better than hardcoding secret keys into the instance.
+* Roles allow you to not use Access Key ID's and Secret Access Keys
 * Roles are preferred from a security perspective _exam question_
 * Roles controlled by policies - JSON - key pairs
 * Changes to role policies take affect immediately
@@ -77,7 +74,7 @@ RDS - OLTP
 - MariaDB
 
 DynamoDB - NoSQL
-RedShirt - OLAP
+RedShift - OLAP
 
 Database:
 * collection - table
