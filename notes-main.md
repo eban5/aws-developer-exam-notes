@@ -241,45 +241,80 @@ If you want to enable a user to download your private data directly from S3, you
 
 Allowing access to buckets.
 - By default, all new buckets are PRIVATE. Hitting a url to a new file upload in a bucket will failed Access Denied. Have to grant public read access.
-- Bucket Policies - bucket level
+- Bucket Policies - bucket level. apply to everythig inside.
 - Access Control Lists - object level
 - S3 buckets can be configured to create access logs, which log all requests made to the S3 bucket. These logs can be written to another bucket.
 
 **Encryption**
 1. In Transit: SSL/TLS (HTTPS)
-1. At Rest:
-    1. Server Side
-        - S3 Managed Keys: each object with master key encryption. AWS manages keys. **SSE-S3**
+2. At Rest:
+    1. Server Side Encryption
+        - _AES-256_, S3 Managed Keys: each object with master key encryption. AWS manages keys. **SSE-S3**
         - AWS Key Management Service, Managed Keys, **SSE-KMS**
         - Server Side Encryption with Customer Provided Keys **SSE-C**
-    2. Client Side Encryption - you encrypt yourself before it his cloud.
+    2. Client Side Encryption - you encrypt yourself before it hits the cloud.
+
+**Enforcing Encryption**
+* PUT request each time a file is uploaded
+
+```
+PUT /myFile HTTP/1.1
+...
+Expect: 100-continue
+```
+
+Expect: 100-continue - don't send the body until acknowledged by S3 that content headers are set a certain way.
+
+* If file is to be encrypted at upload time, use `x-amz-server-side-encryption` will be included in the request header.
+* two options available:
+  * `x-amz-server-side-encryption`: AES256 (SSE-S3 - S3 managed keys)
+  * `x-amz-server-side-encryption` ams:kms (SSE-KMS - KMS managed keys)
+* When this parameter is included in the header of the PUT request, it tells S3 to encrypt the object at the time of the upload, using the specified encryption method.
+* You can enforce the use of Server Side Encryption by using a Bucket Policy which denies any S3 PUT request which doesn't include the `x-amz-server-side-encryption` parameter in the request header.
+
+This tells S3 to encrypt the file using SSE-S3 at the time of upload:
+
+```
+PUT /myFile HTTP/1.1
+...
+Expect: 100-continue
+x-amz-server-side-encryption: AES256
+```
 
 **CORS**
 allowing code in one bucket or resource to access code in another.
 by default they can't access other resources in other buckets because they are PRIVATE by default upon creation.
 
 ## CloudFront
-CDN
 
-* edge location - where content is cached.
-    * READ and WRITE
-    * Used by S3 for Transfer Acceleration - optimized network path for s3 transfer path.
+CDN service
+
+* edge location - where content is cached. separate to an AWS Region/AZ.
+  * READ and WRITE
+  * Used by _S3 for Transfer Acceleration_ - optimized network path for s3 transfer path.
 * origin - could be an s3 bucket, ec2 instance, etc. where files originate.
 * distribution - name given the CDN, which consists of edge locations.
-    * Web Distribution - HTTP/HTTPS, used for websites.
-    * RTMP Distribution - used for media streaming.
+  * Web Distribution - HTTP/HTTPS, used for websites.
+  * RTMP Distribution - used for media streaming.
 
 delivery of content using global network of edge locations/ requests for your content are autoamtcially routed to the nearst edge location, so content is delivered with the best possible performance.
+
+## CloudFront + S3 Transfer Acceleration
+
+S3 Transfer Acceleration enables fast, easy, and secure transfers of files over long distances between your end users and an S3 bucket.
+
+Transfer Acceleration takes advantage of Amazon CloudFront's globally distributed edge locations. As the data arrives at an edge location, data is routed to Amazon S3 over an optimized network path.
+
 
 ## S3 Performance Optimizations
 
 GET intensive workloads you should use CloudFront
-* for > 100 PUT/LIST/DELETE or > 300 GET requests per second.
+
+```markdown
+for > 100 PUT/LIST/DELETE or > 300 GET requests per second.
+```
 
 Mixed Request Type Workloads - avoid sequential key names for your S3 objects. Instead, add a random prefix like a hex hash to the key name to prevent multiple objects from being stored on the same partition.
-
-----
-
 
 ----
 
