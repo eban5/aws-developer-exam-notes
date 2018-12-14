@@ -23,14 +23,13 @@ DynamoDB is made up of
 
 DynamoDB stores and retrieves data based on Primary Key. 
 
-- 2 types of primary key
+- The primary key can just consist of a simple partition key as a single attribute or a max of two attributes as a composite key consisting of partition key and sort key. 2 Types of Primary Keys.
   - **Partition Key** - unique attribute (e.g. user id, product ID, email address)
     - value of the partition key is input to an internal hash function. output of hash function determines the partition or physical location on which the data is stored.
     - *no two items can have same partition key is used as primary key*
   - **Composite Key** - (Partition Key + Sort Key) in combination
     - all items with the same Partition Key are sorted together then sorted according to the Sort Key value
-    - allows you to store multipl items with the same Partition Key
-
+    - allows you to store multiple items with the same Partition Key
       e.g. Same user posting multiple times to a forum. 
       - Primary Key could use a Composite Key 
         - Paritition Key - user ID
@@ -38,6 +37,7 @@ DynamoDB stores and retrieves data based on Primary Key.
       - 2 items may have the same Partition Key, but they must have a different Sort Key
       - All items with the same Partition Key are sorted together, then sorted according to the Sort Key value
       - Allows you to store multiple items with the same Parition Key
+
 
 ## Access Control
 
@@ -200,9 +200,9 @@ Write-through caching service (updates written to cache and backend store at the
 
 Allows you point your DynamoDB API calls at the DAX cluster. 
 
-on Cache miss - DAX performs an Event. Consistent GetItem operation against DybamnocDB
+on Cache miss - DAX performs an Event. Consistent GetItem operation against DynamoDB
 
-Retriueveal of data cfrom DAX reduces the read load on tables
+Retrieval of data from DAX reduces the read load on tables
 
 reduce Provisioned Read Capcity.
 

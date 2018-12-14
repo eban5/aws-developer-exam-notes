@@ -26,7 +26,7 @@ Following successful authentication, the user receives an auth code from the web
 
 **Identity Pools** enable you to create unique identities for your users and authenticate them with IDPs. With an identity, you can obtain temporary limited-priviliege AWS credentials to access other AWS services.
 
-Ex. User logs in via FB and gets her JWT token. Cognito trades it for temp AWS credentials. 
+> After successfully authenticating a user, Amazon Cognito issues JSON web tokens (JWT) that you can use to secure and authorize access to your own APIs, or exchange for AWS credentials. 
 
 Cognito tracks association between user identity and the various different devices they sign in from.
 

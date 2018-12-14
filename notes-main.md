@@ -243,6 +243,8 @@ Charged for:
 - Transfer Acceleration - uses CloudFront to accelerate.
 
 Max filesize transferred via PUT request - 5 GB.
+* Individual Amazon S3 objects can range in size from a minimum of 0 bytes to a maximum of 5 terabytes. The largest object that can be uploaded in a single PUT is 5 gigabytes. Read more: https://aws.amazon.com/s3/faqs/
+
 To achieve better performance, add hex hash to prefix.
 Key name determines which partition it will store file on.
 If you want to enable a user to download your private data directly from S3, you can insert a pre-signed URL into a web page before giving it to your user.
@@ -405,8 +407,8 @@ ex. McDonald's has most commonly ordered burgers ready to go to reduce latency.
 Same-origin policy
 Cross-origin resource sharing - can relax same-origin policy restrictions
 
-Authorization:
-* Lambda authorizers
+**Authorization**:
+> An Amazon API Gateway **Lambda authorizer** is a Lambda function that you provide to control access to your API methods. A Lambda authorizer uses bearer token authentication strategies, such as OAuth or SAML. It can also use information described by headers, paths, query strings, stage variables, or context variables request parameters. 
 * Cognito User Pools
 * IAM user permissions
 
@@ -447,8 +449,8 @@ logs the state of each step so if something goes wrong you can track what went w
 Service that collects data about requests that your application serves, and provides tools you can use to view filter, and gain insights into that data to identify issues and opportunities for optimization.
 - Client handlers to instrument AWS SDK clients that your app uses to call other AWS services.
 - An HTTP client to use to instrument calls to other internal and external HTTP web services.
-
-X-Ray integrates with Java Go Node Python Ruby .NET
+- X-Ray integrates with Java Go Node Python Ruby .NET
+- The X-Ray SDK applies a sampling algorithm to efficiently trace and provide a representative sample of the requests that your application serves. This can be utilised post the data is being successfully being sent to X-Ray and in no way helps us in determining the cause of failure to send the data to X-Ray.
 
 # KMS
 manaaged services to create and control encryption keys
@@ -469,6 +471,10 @@ Dev commit -> repo -> build management system -> test framework -> deploy packag
 CD deploys new code automatically foolowing successful testing.
 
 CodePipeline - automate and orchestrate all of the pipeline activities.
+
+AWS CodePipeline copies files or changes that will be worked on by the actions and stages in the pipeline to the Amazon S3 bucket. These objects are referred to as artifacts, and might be the source for an action (input artifacts) or the output of an action (output artifacts). 
+
+***if an automated test fails, the pipeline stops immediately.***
 
 CodeCommit (code repo) -> CodeBuild (code management system) -> CodeDeploy (deploy pakcaged app)
 
@@ -538,7 +544,7 @@ Switching back to original env is faster and more reliable and is just a acase o
 
 Deployment Group - set of EC2 instances that accept a deployment
 
-## CodePipline
+## CodePipeline
 
 fully managed CI/CD service
 
@@ -570,37 +576,57 @@ Check CodeBuild console for logs or see in CloudWwatch.
 * rollback/delete easily
 * manage updates and dependencies
 
+- Which pseudo parameter can you use to make your CloudFormation independent of the accounts they're running under?
+`AWS::AccountId`. AWS::AccountId returns the AWS account ID of the account in which the stack is being created Read more: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html
+- The `Fn::GetAtt` intrinsic function returns the value of an attribute from a resource in the template. We can use the above function to get the regions ID attribute of the required EC2 instance by passing region ID as the attributeName and EC2 instance ID as logicalNameOfResource.
+  
 **Template**
 - upload template using S3, CF reads it and calls API calls to make it happen.
-- Parameters: custom values, environment type prod or test.
-- Conditions: provision resources based on environment.
-- Mappings: create custom mappins like Region:AMI.
-- Tranformation: reference code yaml/json in S3 and run it. Code re-use here. The optional Transform section specifies one or more macros that AWS CloudFormation uses to process your template. The Transform section builds on the simple, declarative language of AWS CloudFormation with a powerful macro system. INTRINSIC FUNCTION.
-- Resources: resources you are deploying. **MANDATORY**
-- Outputs: user-defined 
+- **Parameters**: custom values, environment type prod or test.
+- **Conditions**: provision resources based on environment.
+  - cannot be applied to Parameters
+- **Mappings**: create custom mappins like Region:AMI.
+- **Tranformation**: reference code yaml/json in S3 and run it. Code re-use here. 
+- **Resources**: resources you are deploying. **MANDATORY**
+- **Outputs**: user-defined 
 
+Only the exported CloudFormation, Export names must be unique within a region for each AWS account. 
+
+- The optional Transform section specifies one or more macros that AWS CloudFormation uses to process your template. The Transform section builds on the simple, declarative language of AWS CloudFormation with a powerful macro system. INTRINSIC FUNCTION.
+- 
 ## CloudFormation and SAM
 
 Serverless Application Model (SAM)
+CloudFormation template and it starts with:Transform: 'AWS::Serverless-2016-10-31' == it's a SAM template
+
+* `AWS::Serverless::Function` creates a Lambda function, IAM execution role, and event source mappings which trigger the function.
+* `AWS::Serverless::Api` creates a collection of Amazon API Gateway resources and methods that can be invoked through HTTPS endpoints.
+* `AWS::Serverless::SimpleTable` resource creates a DynamoDB table with a single attribute primary key. 
+
+The **AWS::Serverless transform** is specifically used for transforming an entire template written in the AWS Serverless Application Model (AWS SAM) syntax into a compliant AWS CloudFormation template. Read more: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-aws-serverless.html
 
 
+## SQS  the first AWS service
+"Pull-based" Message queue - enables web app components to queue messages for other components to read from.
 
-## SQS 
-Message queue - enables web app components to queue messages for other components to read from.
-
-Pull-based
-FIFO queues, only once, order guaranteed
-Default Standard Queues
-Short poll - return immediately if no messages in queue.
-Long poll - spin
-
-Message - ChangeVisibility
-Minimum life 30 seconds, max 12 hours
-Max retention period - 14 days
-Max size 256KB
+* **FIFO queues** - msg delivered only once, order guaranteed, good for banking with strict ordering.
+* **Standard Queues** (default) - best effort ordering, message delivered at least once.
 
 **Dead Letter Queues**
 Amazon SQS supports dead-letter queues, which other queues (source queues) can target for messages that can't be processed (consumed) successfully. Dead-letter queues are useful for debugging your application or messaging system because they let you isolate problematic messages to determine why their processing doesn't succeed. 
+
+* Short poll - return immediately if no messages in queue.
+* Long poll - periodic polling of queue. only return response when a message is in the queue or the timeout is reached.
+  * MAX LONG POLL == 20 seconds
+
+> Once a message is received by one of the distributed consumers, the message cannot be read again until the visibility timeout of that particular message expires. If the message is not processed within the visibility timeout, there are chances that the message will be received again by the distributed consumers leading to duplication in processing of message. By setting a sufficient visibility timeout for the specific message, we can ensure that the same message is not received again by the distributed consumers as the original consumer will delete the message once it has processed. The visibility timeout of the few problematic messages can be altered using ChangeMessageVisibility. 
+
+**VisibilityTimeout**
+_ChangeVisibility_
+* default is 30 seconds - increase is task takes > 30 seconds to complete.
+* Max timeout is 12 hours.
+* Max retention period - 14 days
+* Max size 256KB
 
 ## SNS
 - scalable and highly available notification service.
@@ -608,6 +634,9 @@ Amazon SQS supports dead-letter queues, which other queues (source queues) can t
 - $0.50 per 1 million
 - pub/sub - users subscribe
 - notifications delivered to clients using push 
+- can be customized by protocol type
+
+### SQS + SNS to fan out messages distributed to many queues.
 
 ## SES 
 **Email only** service - for marketing teams.
@@ -625,8 +654,9 @@ Incoming and outgoing emails.
 **Updating**:
 * All at once - updates take all instances down while updates get applied to all intances. You need to roll all back. Not great for prod.
 * Rolling - deploys new version in batches. Good for high performance systems.
-* Rolling with batch - launches an additional batch of instances. can't afford downtime.
+* Rolling with batch - launches an additional batch of instances. can't afford downtime - maintains full capacity.
 * immutable - deploys new version to fresh group of instances in their own new autoscaling group. preferred for mission critical. Roll backs just entail killing the unwanted instances.
+
 
 **Configuring**
 
@@ -634,11 +664,12 @@ YAML or JSON file has configs. Needs to end in `myconfig.config` and in `.ebexte
 
 **Coupling with RDS**
 - In dev OK, not in prod. Ties lifecycle together.
+- Any resources created as part of your .ebextensions is part of your CloudFormation template and will get deleted if the environment is terminated. Resources that need to persist environments deletions must be created externally
 
 ## Kinesis
 Streaming data 
 
 1. Streams - data producers feed KStreams. Data stored in shards, data is passed to consumer (EC2). The COnsumers then pass that to other AWS services. SHARDS
-1. Firehose - analyzing data. real-time analytics for BI tools.
-1. Analytics - SQL type queries off collected data
+2. Firehose - analyzing data. real-time analytics for BI tools.
+3. Analytics - SQL type queries off collected data
 
