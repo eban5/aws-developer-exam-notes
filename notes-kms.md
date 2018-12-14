@@ -10,7 +10,7 @@
 
 **Customer Master Key** (CMK)
 
-* can't be exported
+* can't be exported - **ALWAYS LIVE IN KMS**
 
 * alias
 

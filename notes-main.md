@@ -191,6 +191,17 @@ Practice Quiz incorrect:
     Individual instances are provisioned in AZs.
     No encryption on the fly.
 
+# Route53
+
+* Simple routing policy – Use for a single resource that performs a given function for your domain, for example, a web server that serves content for the example.com website.
+* Failover routing policy – Use when you want to configure active-passive failover.
+* Geolocation routing policy – Use when you want to route traffic based on the location of your users.
+* Geoproximity routing policy – Use when you want to route traffic based on the location of your resources and, optionally, shift traffic from resources in one location to resources in another.
+* Latency routing policy – Use when you have resources in multiple AWS Regions and you want to route traffic to the region that provides the best latency.
+* Multivalue answer routing policy – Use when you want Route 53 to respond to DNS queries with up to eight healthy records selected at random.
+* Weighted routing policy – Use to route traffic to multiple resources in proportions that you specify.
+
+Topics
 ----
 
 # S3
@@ -305,16 +316,21 @@ S3 Transfer Acceleration enables fast, easy, and secure transfers of files over 
 
 Transfer Acceleration takes advantage of Amazon CloudFront's globally distributed edge locations. As the data arrives at an edge location, data is routed to Amazon S3 over an optimized network path.
 
+Signed URLs or Signed Cookies are a way to restrict users access via URLs.
+WAF helps protect you at the application layer
 
 ## S3 Performance Optimizations
 
-GET intensive workloads you should use CloudFront
+GET intensive workloads you should use CloudFront.
 
 ```markdown
-for > 100 PUT/LIST/DELETE or > 300 GET requests per second.
+optimize if you get > 100 PUT/LIST/DELETE or > 300 GET requests per second.
 ```
 
-Mixed Request Type Workloads - avoid sequential key names for your S3 objects. Instead, add a random prefix like a hex hash to the key name to prevent multiple objects from being stored on the same partition.
+_Mixed Request Type Workloads_ - key names can impact performance. avoid sequential key names for your S3 objects. Instead, add a random prefix like a hex hash to the key name to prevent multiple objects from being stored on the same partition. Reduces likelihood of I/O contention.
+
+> 2018 July, new increase in performance negates the best practice of using sequential / random hash prefixes in keynames.
+
 
 ----
 
@@ -331,6 +347,32 @@ Scales out (not up) automatically
 1 event = 1 function
 1 event can trigger any number of events.
 
+## Lambda Optimizations
+
+1. Separate the Lambda handler (entry point) from your core logic.
+
+```javascript
+exports.myHandler = function(event, context, callback) {
+	var foo = event.foo;
+	var bar = event.bar;
+	var result = MyLambdaFunction (foo, bar);
+ 
+	callback(null, result);
+}
+ 
+function MyLambdaFunction (foo, bar) {
+	// MyLambdaFunction logic here
+}
+```
+1. Take advantage of Execution Context reuse to improve the performance of your function.
+2. Use AWS Lambda Environment Variables to pass operational parameters to your function
+3. To control the dependencies in your function's deployment, package all dependencies with your deployment package.
+4. Minimize your deployment package size to its runtime necessities.
+5. Reduce the time it takes Lambda to unpack deployment packages
+6. Minimize the complexity of your dependencies (prefer simpler frameworks.)
+7. Avoid using recursive code. Could lead to unintended function volume and escalated costs. To prevent on accident, set _function concurrent execution kimit_ to 0 immediately to throttle all invocations to the function.
+
+
 AWS X-ray lets you debug what's happening.
 
 ## API Gateway
@@ -342,7 +384,7 @@ Expose HTTPS endpoints to define a RESTful API
 Serverlessly connect to service like Lambda and Dynamo
 Send each API endpoint to a different target
 Scale effortlessly
-Track and control usage by API key
+Track and control usage by API key. Limit usage with _Usage Plans with API Keys_
 Throttle API requests
 Connect to Cloudwatch
 Versioning of API
@@ -362,6 +404,11 @@ ex. McDonald's has most commonly ordered burgers ready to go to reduce latency.
 
 Same-origin policy
 Cross-origin resource sharing - can relax same-origin policy restrictions
+
+Authorization:
+* Lambda authorizers
+* Cognito User Pools
+* IAM user permissions
 
 ## Lambda Triggers
 
@@ -528,9 +575,14 @@ Check CodeBuild console for logs or see in CloudWwatch.
 - Parameters: custom values, environment type prod or test.
 - Conditions: provision resources based on environment.
 - Mappings: create custom mappins like Region:AMI.
-- Tranformation: reference code yaml/json in S3 and run it. Code re-use here.
+- Tranformation: reference code yaml/json in S3 and run it. Code re-use here. The optional Transform section specifies one or more macros that AWS CloudFormation uses to process your template. The Transform section builds on the simple, declarative language of AWS CloudFormation with a powerful macro system. INTRINSIC FUNCTION.
 - Resources: resources you are deploying. **MANDATORY**
 - Outputs: user-defined 
+
+## CloudFormation and SAM
+
+Serverless Application Model (SAM)
+
 
 
 ## SQS 
@@ -547,6 +599,8 @@ Minimum life 30 seconds, max 12 hours
 Max retention period - 14 days
 Max size 256KB
 
+**Dead Letter Queues**
+Amazon SQS supports dead-letter queues, which other queues (source queues) can target for messages that can't be processed (consumed) successfully. Dead-letter queues are useful for debugging your application or messaging system because they let you isolate problematic messages to determine why their processing doesn't succeed. 
 
 ## SNS
 - scalable and highly available notification service.
