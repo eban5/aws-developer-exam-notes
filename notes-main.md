@@ -38,6 +38,11 @@ create storage volumes and attach them to EC2 instances. they are AZ locked.
 
 _always use roles_
 
+**Encryption**
+
+* Restoring a volume from an encrypted snapshot must be an encrypted volume.
+* A snapshot of an encrypted volume is always encrypted
+
 ## IAM 
 
 Manage users and their level of access to AWS Console
@@ -55,6 +60,8 @@ Manage users and their level of access to AWS Console
 
 Rule of Least Privilege - give users the smallest amount of privileges to your system and only add what is necessary.
 
+If you have a Deny all EC2 policy and a Allow 1 thing in EC2 - you'll get denied because of the explicit deny.
+
 Roles:
 * Create roles and apply them to EC2 instances to interact with AWS services on your behalf. Better than hardcoding secret keys into the instance.
 * Roles allow you to not use Access Key ID's and Secret Access Keys
@@ -62,6 +69,21 @@ Roles:
 * Roles controlled by policies - JSON - key pairs
 * Changes to role policies take affect immediately
 * Attach/detach roles to running EC2 instances without having to stop/terminate them. *This is new.*
+
+## Application Load Balancer 
+Handles HTTP/HTTPS/Websocket
+
+## CloudWatch
+
+Data is available in 1-minute periods for an additional cost. To get this level of data, you must specifically enable it for the instance. 
+
+Using the existing PutMetricData API, you can now publish Custom Metrics down to 1-second resolution.
+
+Amazon CloudWatch enables you to retrieve statistics as an ordered set of time-series data, known as metrics. You can use these metrics to verify that your system is performing as expected.A CloudWatch alarm is an object that monitors a single metric over a specific period. A metric is a variable that you want to monitor, such as average CPU usage of the EC2 instances, or incoming network traffic from many different EC2 instances. The alarm changes its state when the value of the metric breaches a defined range and maintains the change for a specified number of periods.
+
+If you set an alarm on a high-resolution metric, you can specify a high-resolution alarm with a period of 10 seconds or 30 seconds, or you can set a regular alarm with a period of any multiple of 60 seconds. 
+
+You can also alert sooner with High-Resolution Alarms, as frequently as 10-second periods. High-Resolution Alarms allow you to react and take actions faster, and support the same actions available today with standard 1-minute alarms.
 
 ## RDS
 
@@ -347,6 +369,9 @@ Scales out (not up) automatically
 1 event = 1 function
 1 event can trigger any number of events.
 
+* Environment Variable total max size == 4KB
+
+
 ### Lambda Optimizations
 
 1. Separate the Lambda handler (entry point) from your core logic.
@@ -378,6 +403,8 @@ To encrypt 1 MB, you need to use the Encryption SDK and pack the encrypted file 
 
 AWS Lambda environment variables have a maximum size of a few KB. Additionally, the direct "Encrypt" API of KMS also has a few KB limit. 
 
+DLQ 
+Any Lambda function invoked asynchronously is retried twice before the event is discarded. If the retries fail and you're unsure why, use Dead Letter Queues (DLQ) to direct unprocessed events to an Amazon SQS queue. 
 
 ### Lambda Triggers
 
@@ -461,6 +488,7 @@ SDK:
 * Client handlers to instrument AWS SDK clients that your app uses to call other AWS services.
 * An HTTP client to use to instrument calls to other internal and external HTTP web services.
 * X-Ray integrates with Java Go Node Python Ruby .NET -> anything supported by Lambda
+* Sampling helps keep costs down 
 
 > The X-Ray SDK applies a sampling algorithm to efficiently trace and provide a representative sample of the requests that your application serves. This can be utilised post the data is being successfully being sent to X-Ray and in no way helps us in determining the cause of failure to send the data to X-Ray.
 
@@ -626,10 +654,12 @@ CloudFormation template and it starts with:Transform: 'AWS::Serverless-2016-10-3
 The **AWS::Serverless transform** is specifically used for transforming an entire template written in the AWS Serverless Application Model (AWS SAM) syntax into a compliant AWS CloudFormation template. Read more: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-aws-serverless.html
 
 
-## SQS  the first AWS service
+## SQS  
+the first AWS service
 "Pull-based" Message queue - enables web app components to queue messages for other components to read from.
 ***No limit on max number of messages stored in an SQS queue.***
 
+* To send messages larger than 256 KB, you can use the Amazon SQS Extended Client Library for Java. This library allows you to send an Amazon SQS message that contains a reference to a message payload in Amazon S3. The maximum payload size is 2 GB. 
 
 * **FIFO queues** - msg delivered only once, order guaranteed, good for banking with strict ordering.
 * **Standard Queues** (default) - best effort ordering, message delivered at least once.
@@ -641,6 +671,8 @@ Amazon SQS supports dead-letter queues, which other queues (source queues) can t
 * Long poll - periodic polling of queue. only return response when a message is in the queue or the timeout is reached.
   * MAX LONG POLL == 20 seconds
 
+API Call to `PurgeQueue` to delete all messages in the queue efficiently, while guaraneteeing uptime.
+
 > Once a message is received by one of the distributed consumers, the message cannot be read again until the visibility timeout of that particular message expires. If the message is not processed within the visibility timeout, there are chances that the message will be received again by the distributed consumers leading to duplication in processing of message. By setting a sufficient visibility timeout for the specific message, we can ensure that the same message is not received again by the distributed consumers as the original consumer will delete the message once it has processed. The visibility timeout of the few problematic messages can be altered using ChangeMessageVisibility. 
 
 **VisibilityTimeout**
@@ -649,6 +681,8 @@ _ChangeVisibility_
 * Max timeout is 12 hours.
 * Max retention period - 14 days
 * Max size 256KB
+
+If your application performs operations or workflows that take a long time to complete, you can offload those tasks to a dedicated worker environment. Decoupling your web application front end from a process that performs blocking operations is a common way to ensure that your application stays responsive under load. 
 
 ## SNS
 - scalable and highly available notification service.

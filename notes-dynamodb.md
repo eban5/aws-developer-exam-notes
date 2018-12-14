@@ -129,6 +129,8 @@ Efficiency: Query > Scan
 * Larger number of smaller ops will allow other requests to succeed without throttling.
 * Avoid scan when possible. Design tables so you can use Query, Get, or BatchGetItem
 
+It's not always possible to distribute read and write activity evenly all the time. When data access is imbalanced, a "hot" partition can receive such a higher volume of read and write traffic compared to other partitions. 
+
 Improve Scan Performance - Parallel Scans
 
 * by default a scan processes data sequentially in returning 1 MB increments before moving on to retrieve the next 1 MB of data. It can only scan one partition at a time.

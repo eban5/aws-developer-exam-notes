@@ -48,6 +48,8 @@ aws kms enable-key-rotation --key-id KEYHERE ## need perm acces here
 
 Process of encrypting envelope key
 
+Perform envelope encryption: API call to `GenerateDataKey`
+
 * Customer Master Key is used to decrypt the data key (envelope key)
 
 * Envelope Key is used to decrypt the data
