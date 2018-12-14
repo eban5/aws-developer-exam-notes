@@ -242,8 +242,9 @@ Charged for:
 - Data Management Pricing - data transferred out of S3
 - Transfer Acceleration - uses CloudFront to accelerate.
 
-Max filesize transferred via PUT request - 5 GB.
-* Individual Amazon S3 objects can range in size from a minimum of 0 bytes to a maximum of 5 terabytes. The largest object that can be uploaded in a single PUT is 5 gigabytes. Read more: https://aws.amazon.com/s3/faqs/
+* Max filesize transferred **via PUT request - 5 GB**.
+* The total volume of data and number of objects you can store are **unlimited**. 
+* _Individual Amazon S3 objects_ can range in size from a **minimum of 0 bytes to a maximum of 5 terabytes**
 
 To achieve better performance, add hex hash to prefix.
 Key name determines which partition it will store file on.
@@ -349,7 +350,7 @@ Scales out (not up) automatically
 1 event = 1 function
 1 event can trigger any number of events.
 
-## Lambda Optimizations
+### Lambda Optimizations
 
 1. Separate the Lambda handler (entry point) from your core logic.
 
@@ -374,8 +375,33 @@ function MyLambdaFunction (foo, bar) {
 6. Minimize the complexity of your dependencies (prefer simpler frameworks.)
 7. Avoid using recursive code. Could lead to unintended function volume and escalated costs. To prevent on accident, set _function concurrent execution kimit_ to 0 immediately to throttle all invocations to the function.
 
+### Lambda Encryption
 
-AWS X-ray lets you debug what's happening.
+To encrypt 1 MB, you need to use the Encryption SDK and pack the encrypted file with the lambda function
+
+AWS Lambda environment variables have a maximum size of a few KB. Additionally, the direct "Encrypt" API of KMS also has a few KB limit. 
+
+
+### Lambda Triggers
+
+[Amazon S3](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-s3), [Amazon DynamoDB](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-dynamo-db), [Amazon Kinesis Data Streams](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-kinesis-streams), [Amazon Simple Notification Service](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-sns), [Amazon Simple Email Service](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-ses), [Amazon Simple Queue Service](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-sqs), [Amazon Cognito](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cognito), [AWS CloudFormation](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudformation), [Amazon CloudWatch Logs](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudwatch-logs), [Amazon CloudWatch Events](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudwatch-events), [AWS CodeCommit](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-codecommit), [Scheduled Events (powered by Amazon CloudWatch Events)](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-scheduled-events), [AWS Config](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-config), [Amazon Alexa](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-echo), [Amazon Lex](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-lex), [Amazon API Gateway](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-api-gateway), [AWS IoT Button](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-iot-button), [Amazon CloudFront](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudfront), [Amazon Kinesis Data Firehose](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-kinesis-firehose)
+
+### Lambda Versioning
+
+* $LATEST is the latest version of a function
+* Can have multiple versions. You can publish one or more versions of your Lambda function.
+* you can work with different variations of your Lambda function in your development workflow such as dev/beta/prod.
+* Each Lambda function version has a unique ARN - after you publish a version it is ***immutable***
+  * Qualified ARN - the function ARN with the version suffix `arn:aws:lambda:aws-region:acct-id:function:hellowworld:$LATEST`
+  * Unqualified ARN - the function ARN without version suffix: `arn:aws:lambda:aws-region:acct-id:function:hellowworld`
+* Can split traffic using aliases to different versions
+  * cannot split traffic with $LATEST, instead create version instead.
+
+### Aliases
+
+* with a function version $LATEST, you can publish a version 1 of it. 
+  * by creating an alias named PROD that points to version 1, you can now use the PROD alias to invoke version 1 of the Lambda function.
+  * then, update the code (the $LATEST version) with all of your improvements, then publish another stable and improve version 2. Promote version 2 to production by remapping the PROD alias so that it points to version 2. 
 
 ## API Gateway
 
@@ -386,25 +412,29 @@ Expose HTTPS endpoints to define a RESTful API
 Serverlessly connect to service like Lambda and Dynamo
 Send each API endpoint to a different target
 Scale effortlessly
+
+**Usage & Billing**
 Track and control usage by API key. Limit usage with _Usage Plans with API Keys_
 Throttle API requests
 Connect to Cloudwatch
 Versioning of API
+
+**Import APIs**
 - Import custom on-prem API using Swagger Importer tool
 
 1. Define an API (container)
 2. Define resources and nested resources (url paths)
-    3. select supported HTTP methods
-    4. set seuciruty 
-    5. choose target
-    6. set rquest and response transformations
-7. deploy api to a stage
+    1. select supported HTTP methods
+    2. set seuciruty 
+    3. choose target
+    4. set rquest and response transformations
+3. deploy api to a stage
 
-API caching for endpoint response.
-Caching lets you reduce the number of calls made to your endpoint and also improve the latency.
-ex. McDonald's has most commonly ordered burgers ready to go to reduce latency.
+**API caching for endpoint response**
+* Caching lets you reduce the number of calls made to your endpoint and also improve the latency.
+  * ex. McDonald's has most commonly ordered burgers ready to go to reduce latency.
 
-Same-origin policy
+**Same-origin policy**
 Cross-origin resource sharing - can relax same-origin policy restrictions
 
 **Authorization**:
@@ -412,32 +442,12 @@ Cross-origin resource sharing - can relax same-origin policy restrictions
 * Cognito User Pools
 * IAM user permissions
 
-## Lambda Triggers
+**API Gateway Deployment**
+> In a canary release deployment, total API traffic is separated at random into a production release and a canary release with a pre-configured ratio. Typically, the canary release receives a small percentage of API traffic and the production release takes up the rest. The updated API features are only visible to API traffic through the canary. You can adjust the canary traffic percentage to optimize test coverage or performance
 
-*   [Amazon S3](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-s3)
-*   [Amazon DynamoDB](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-dynamo-db)
-*   [Amazon Kinesis Data Streams](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-kinesis-streams)
-*   [Amazon Simple Notification Service](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-sns)
-*   [Amazon Simple Email Service](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-ses)
-*   [Amazon Simple Queue Service](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-sqs)
-*   [Amazon Cognito](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cognito)
-*   [AWS CloudFormation](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudformation)
-*   [Amazon CloudWatch Logs](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudwatch-logs)
-*   [Amazon CloudWatch Events](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudwatch-events)
-*   [AWS CodeCommit](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-codecommit)
-*   [Scheduled Events (powered by Amazon CloudWatch Events)](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-scheduled-events)
-*   [AWS Config](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-config)
-*   [Amazon Alexa](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-echo)
-*   [Amazon Lex](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-lex)
-*   [Amazon API Gateway](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-api-gateway)
-*   [AWS IoT Button](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-iot-button)
-*   [Amazon CloudFront](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-cloudfront)
-*   [Amazon Kinesis Data Firehose](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html#supported-event-source-kinesis-firehose)
+**Stage variables** are name-value pairs that you can define as configuration attributes associated with a deployment stage of an API. They act like environment variables and can be used in your API setup and mapping templates. With **deployment stages** in API Gateway, you can manage multiple release stages for each API, such as alpha, beta, and production. Using stage variables you can configure an API deployment stage to interact with different backend endpoints.
 
-$LATEST version of a function
-Can have multiple versions
-Can split traffic using aliases to different versions
-    - canot split traffic with $LATEST, instead create version instead.
+
 
 ## Step Functions
 Visualize serverless application
@@ -447,14 +457,20 @@ logs the state of each step so if something goes wrong you can track what went w
 ## AWS X-Ray
 
 Service that collects data about requests that your application serves, and provides tools you can use to view filter, and gain insights into that data to identify issues and opportunities for optimization.
-- Client handlers to instrument AWS SDK clients that your app uses to call other AWS services.
-- An HTTP client to use to instrument calls to other internal and external HTTP web services.
-- X-Ray integrates with Java Go Node Python Ruby .NET
-- The X-Ray SDK applies a sampling algorithm to efficiently trace and provide a representative sample of the requests that your application serves. This can be utilised post the data is being successfully being sent to X-Ray and in no way helps us in determining the cause of failure to send the data to X-Ray.
 
-# KMS
-manaaged services to create and control encryption keys
+`<App with X-Ray SDK installed> sends JSON to <X-Ray Daemon> listening on UDP, send JSON to <X-RAY API>, visualizes in <X-Ray Console>`
 
+SDK:
+* Client handlers to instrument AWS SDK clients that your app uses to call other AWS services.
+* An HTTP client to use to instrument calls to other internal and external HTTP web services.
+* X-Ray integrates with Java Go Node Python Ruby .NET -> anything supported by Lambda
+
+> The X-Ray SDK applies a sampling algorithm to efficiently trace and provide a representative sample of the requests that your application serves. This can be utilised post the data is being successfully being sent to X-Ray and in no way helps us in determining the cause of failure to send the data to X-Ray.
+
+IAM rules:
+Create an IAM role with write permissions and assign it to the resources running your application. AWSXRayDaemonWriteAccess includes permission to upload traces. 
+
+If your Lambda function runs on a schedule, or is invoked by a service that is not instrumented, you can configure Lambda to sample and record invocations with active tracing.
 
 # CI / CD
 
@@ -515,6 +531,7 @@ BeforeBlockTraffic - run tasks on instances before they are deregistered from a 
 BlockTraffic - deregister instances from a load balancer
 AfterBlockTraffic - run tasks on instances after they are deregistered from a load balancer.
 
+ValidateService - the last deployment life cycle event used to verify the deployment completed successfully.
 
 
 ```yaml
@@ -563,22 +580,28 @@ docker push url/mydockerrepo:latest
 
 Use `buildspec.yml` to define the build commands and settings used by CodeBuild to run your build.
 
+Encrypt output of Codebuild by specifying KMS key to use.
+
 You can override/insert build commands directly using an editor inline or use a `buildspec.yml` predefined.
 
 Check CodeBuild console for logs or see in CloudWwatch.
 
 ## CloudFormation
 
-* manage configure and provision infrstrastructure as code.
+* manage configure and provision infrastructure as code.
 * YAML or JSON
 * idempotent instances and configurations
 * free to use except what underlying you use
 * rollback/delete easily
 * manage updates and dependencies
+* the order in which resources are created must not be specified.   
+
+> The stack name is an identifier that helps you find a particular stack from a list of stacks. A stack name can contain only alphanumeric characters (case-sensitive) and hyphens. It must start with an alphabetic character and can't be longer than 128 characters. ***Must be unique within a region***
 
 - Which pseudo parameter can you use to make your CloudFormation independent of the accounts they're running under?
 `AWS::AccountId`. AWS::AccountId returns the AWS account ID of the account in which the stack is being created Read more: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html
 - The `Fn::GetAtt` intrinsic function returns the value of an attribute from a resource in the template. We can use the above function to get the regions ID attribute of the required EC2 instance by passing region ID as the attributeName and EC2 instance ID as logicalNameOfResource.
+- The intrinsic `function Ref` returns the value of the specified parameter or resource.When you specify a parameter's logical name, it returns the value of the parameter.When you specify a resource's logical name, it returns a value that you can typically use to refer to that resource, such as a physical ID. 
   
 **Template**
 - upload template using S3, CF reads it and calls API calls to make it happen.
@@ -608,6 +631,8 @@ The **AWS::Serverless transform** is specifically used for transforming an entir
 
 ## SQS  the first AWS service
 "Pull-based" Message queue - enables web app components to queue messages for other components to read from.
+***No limit on max number of messages stored in an SQS queue.***
+
 
 * **FIFO queues** - msg delivered only once, order guaranteed, good for banking with strict ordering.
 * **Standard Queues** (default) - best effort ordering, message delivered at least once.
@@ -657,6 +682,7 @@ Incoming and outgoing emails.
 * Rolling with batch - launches an additional batch of instances. can't afford downtime - maintains full capacity.
 * immutable - deploys new version to fresh group of instances in their own new autoscaling group. preferred for mission critical. Roll backs just entail killing the unwanted instances.
 
+Speed up deployments by bundling dependencies with the code during the build output phase.
 
 **Configuring**
 
@@ -670,6 +696,10 @@ YAML or JSON file has configs. Needs to end in `myconfig.config` and in `.ebexte
 Streaming data 
 
 1. Streams - data producers feed KStreams. Data stored in shards, data is passed to consumer (EC2). The COnsumers then pass that to other AWS services. SHARDS
-2. Firehose - analyzing data. real-time analytics for BI tools.
+   1. To reduce overhead and increase throughput, the application produce records in batches
+   2. `ProvisionedThroughputException`: use batch messages and ExponentialBackoff to reoslve and keep cost down.
+   3. Kinesis Data Streams segregates the data records belonging to a stream into multiple shards. It uses the partition key that is associated with each data record to determine which shard a given data record belongs to. Partition keys are Unicode strings with a maximum length limit of 256 bytes.A stream is composed of one or more shards, each of which provides a fixed unit of capacity. Each shard can support up to 5 transactions per second for reads, up to a maximum total data read rate of 2 MB per second and up to 1,000 records per second for writes, up to a maximum total data write rate of 1 MB per second (including partition keys). The data capacity of your stream is a function of the number of shards that you specify for the stream. The total capacity of the stream is the sum of the capacities of its shards. 
+2. Firehose - analyzing data. real-time analytics for BI tools.easiest way to load streaming data into data stores and analytics tools.
+   1. It can capture, transform, and load streaming data into Amazon S3, Amazon Redshift, Amazon Elasticsearch Service, and Splunk.
 3. Analytics - SQL type queries off collected data
 

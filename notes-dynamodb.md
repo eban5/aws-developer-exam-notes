@@ -99,7 +99,11 @@ e.g. Select an item where the user ID is equal to 212, will select all the attri
 * Use optional Sort Key name and value to refind the results
 * e.g. if your Sort Key is a temp stamp you can refund the query to only select items with a timestamp of last 7 days
 
+### ProjectionExpression:
+A projection expression is a string that identifies the attributes you want. To retrieve a single attribute, specify its name. For multiple attributes, the names must be comma-separated. 
+
 By default a Query returns all attributes for items but you can use the `ProjectionExpression` parameter if you want the query to only return the specific attributes you want. e.g. only see email address rather than all attributes 
+
 
 *Results are always sorted by the Sort Key*
 
